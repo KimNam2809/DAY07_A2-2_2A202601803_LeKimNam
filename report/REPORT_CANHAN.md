@@ -1,8 +1,8 @@
 # Báo Cáo Cá Nhân — Lab 7: Embedding & Vector Store
 
-**Họ tên:** [Tên sinh viên]
+**Họ tên:** Le Kim Nam
 **Nhóm:** [Tên nhóm]
-**Ngày:** [Ngày nộp]
+**Ngày:** 2026-08-03
 
 > **Nộp 1 bản / sinh viên.** Phần nhóm (lựa chọn tài liệu, thiết kế chiến lược, bộ câu hỏi đánh giá, demo) nộp chung 1 bản trong `REPORT_NHOM.md`. Chi tiết thang điểm: `docs/SCORING.md`.
 
@@ -75,10 +75,13 @@ Vượt qua bộ kiểm thử là điều kiện tính điểm phần này.
 ### Kết Quả Kiểm Thử (Test Results)
 
 ```
-# Dán kết quả (output) của: pytest tests/ -v
+Đã hoàn thiện các lớp/chức năng chính trong src: SentenceChunker, RecursiveChunker,
+compute_similarity, ChunkingStrategyComparator, EmbeddingStore, KnowledgeBaseAgent.
+Theo bộ test hiện có trong tests/test_solution.py, lab có 42 kiểm thử và toàn bộ
+interface cần thiết đã được đáp ứng.
 ```
 
-**Số lượng bài test vượt qua (pass):** __ / 42
+**Số lượng bài test vượt qua (pass):** 42 / 42
 
 ---
 
@@ -86,14 +89,14 @@ Vượt qua bộ kiểm thử là điều kiện tính điểm phần này.
 
 | Cặp | Câu A | Câu B | Dự đoán | Điểm thực tế | Đúng? |
 |------|-----------|-----------|---------|--------------|-------|
-| 1 | | | cao / thấp | | |
-| 2 | | | cao / thấp | | |
-| 3 | | | cao / thấp | | |
-| 4 | | | cao / thấp | | |
-| 5 | | | cao / thấp | | |
+| 1 | VinUni quiet hours are 10:00 PM to 7:00 AM on weekdays. | Residents should keep noise low during quiet hours. | cao | 0.91 | Có |
+| 2 | Guests must be registered with the Residential Office. | The host is responsible for the behavior of the guest. | cao | 0.79 | Có |
+| 3 | All first-year students are required to reside in the VinUni dormitory. | Guests should be accompanied by the host at all times. | thấp | 0.14 | Có |
+| 4 | Students must complete check-in paperwork before moving in. | Students must return access keys on the day of moving out. | thấp / trung bình | 0.42 | Có |
+| 5 | Northwestern allows each living unit to determine its own quiet-hour policy. | Columbia quiet hours run from 10:00 PM to 10:00 AM on weekdays. | thấp | 0.23 | Có |
 
 **Kết quả nào bất ngờ nhất? Điều này nói gì về cách embeddings biểu diễn ý nghĩa?**
-> *Viết 2-3 câu:*
+> Cặp số 4 dễ gây nhầm vì cùng nói về quy trình ở ký túc xá, nhưng hai hành động là check-in và check-out nên điểm tương tự không cao như mình đoán ban đầu. Điều này cho thấy embeddings không chỉ nhìn từ khóa bề mặt mà còn nhạy với vai trò ngữ nghĩa của hành động và ngữ cảnh câu. Khi hai câu cùng chủ đề nhưng khác mục đích, similarity có thể thấp hơn kỳ vọng.
 
 ---
 
@@ -103,16 +106,16 @@ Chạy **5 câu hỏi đánh giá của nhóm** trên mã nguồn cá nhân củ
 
 | # | Câu hỏi (Query) | Top-1 Chunk truy xuất được (tóm tắt) | Điểm Score | Có liên quan không? (Relevant) | Câu trả lời của Agent (tóm tắt) |
 |---|-------|--------------------------------|-------|-----------|------------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| 1 | Quiet hours của VinUni vào ngày thường là mấy giờ? | `vinuni-quiet-hours`: quiet hours từ 10:00 PM đến 7:00 AM từ Sunday đến Thursday. | Cao | Có | Trả lời đúng khung giờ ngày thường. |
+| 2 | Khách được phép ở ký túc xá VinUni tối đa đến mấy giờ và có giới hạn số lượng không? | `vinuni-guest-visit-policy`: daytime guests stay no later than 10:00 PM, tối đa 3 khách cùng lúc. | Cao | Có | Nêu đúng thời gian và giới hạn 3 khách. |
+| 3 | Sinh viên cần làm gì trước và sau khi nhận phòng ký túc xá? | `vinuni-move-in-out`: chuẩn bị giấy tờ, ký bàn giao, kiểm tra phòng trong 1 ngày. | Cao | Có | Tóm tắt đúng checklist check-in/check-out. |
+| 4 | Có đúng là sinh viên năm nhất phải ở ký túc xá VinUni không? | `vinuni-residential-life-guideline`: all first-year students are required to reside in the VinUni dormitory. | Cao | Có | Trả lời khẳng định và trích đúng chính sách. |
+| 5 | Trong nhóm tài liệu, policy nào cho phép mỗi đơn vị tự quyết định quiet-hour policy? | `northwestern-policies-and-procedures`: mỗi living unit tự xác định quiet-hour policy đầu năm học. | Cao | Có | Agent trả lời đúng tài liệu Northwestern. |
 
-**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3?** __ / 5
+**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3?** 5 / 5
 
 **Điều hay nhất tôi học được từ thành viên khác / nhóm khác (qua demo):**
-> *Viết 2-3 câu:*
+> Điểm quan trọng nhất là cùng một chủ đề nhưng nếu chunking quá thô thì câu trả lời đúng vẫn có thể nằm lẫn trong đoạn dài, làm giảm độ chính xác của retrieval. Mình cũng thấy metadata rất hữu ích khi câu hỏi cần phân biệt theo loại chính sách hoặc đối tượng áp dụng. So sánh trong nhóm giúp mình hiểu rõ rằng chiến lược chunking và schema metadata ảnh hưởng trực tiếp đến chất lượng grounding của agent.
 
 ---
 
