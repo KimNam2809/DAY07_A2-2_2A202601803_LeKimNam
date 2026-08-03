@@ -47,8 +47,19 @@ class SentenceChunker:
         self.max_sentences_per_chunk = max(1, max_sentences_per_chunk)
 
     def chunk(self, text: str) -> list[str]:
-        # TODO: split into sentences, group into chunks
-        raise NotImplementedError("Implement SentenceChunker.chunk")
+        if not text:
+            return []
+
+        sentences = [
+            sentence.strip()
+            for sentence in re.split(r"(?<=[.!?])\s+", text)
+            if sentence.strip()
+        ]
+        limit = self.max_sentences_per_chunk
+        return [
+            " ".join(sentences[index : index + limit])
+            for index in range(0, len(sentences), limit)
+        ]
 
 
 class RecursiveChunker:
@@ -66,12 +77,60 @@ class RecursiveChunker:
         self.chunk_size = chunk_size
 
     def chunk(self, text: str) -> list[str]:
-        # TODO: implement recursive splitting strategy
-        raise NotImplementedError("Implement RecursiveChunker.chunk")
+        if not text:
+            return []
+
+        chunks = self._split(text, self.separators)
+        return [chunk.strip() for chunk in chunks if chunk.strip()]
 
     def _split(self, current_text: str, remaining_separators: list[str]) -> list[str]:
-        # TODO: recursive helper used by RecursiveChunker.chunk
-        raise NotImplementedError("Implement RecursiveChunker._split")
+        if not current_text:
+            return []
+        if len(current_text) <= self.chunk_size:
+            return [current_text]
+
+        if not remaining_separators:
+            return [
+                current_text[index : index + self.chunk_size]
+                for index in range(0, len(current_text), self.chunk_size)
+            ]
+
+        separator = remaining_separators[0]
+        if not separator:
+            return [
+                current_text[index : index + self.chunk_size]
+                for index in range(0, len(current_text), self.chunk_size)
+            ]
+
+        if separator not in current_text:
+            return self._split(current_text, remaining_separators[1:])
+
+        parts = current_text.split(separator)
+        chunks: list[str] = []
+        current_chunk = ""
+
+        for part in parts:
+            if not part:
+                continue
+
+            candidate = part if not current_chunk else f"{current_chunk}{separator}{part}"
+            if len(candidate) <= self.chunk_size:
+                current_chunk = candidate
+                continue
+
+            if current_chunk:
+                chunks.append(current_chunk)
+                current_chunk = ""
+
+            if len(part) <= self.chunk_size:
+                current_chunk = part
+            else:
+                chunks.extend(self._split(part, remaining_separators[1:]))
+
+        if current_chunk:
+            chunks.append(current_chunk)
+
+        return chunks
 
 
 def _dot(a: list[float], b: list[float]) -> float:
@@ -86,13 +145,32 @@ def compute_similarity(vec_a: list[float], vec_b: list[float]) -> float:
 
     Returns 0.0 if either vector has zero magnitude.
     """
-    # TODO: implement cosine similarity formula
-    raise NotImplementedError("Implement compute_similarity")
+    norm_a = math.sqrt(_dot(vec_a, vec_a))
+    norm_b = math.sqrt(_dot(vec_b, vec_b))
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+    return _dot(vec_a, vec_b) / (norm_a * norm_b)
 
 
 class ChunkingStrategyComparator:
     """Run all built-in chunking strategies and compare their results."""
 
     def compare(self, text: str, chunk_size: int = 200) -> dict:
-        # TODO: call each chunker, compute stats, return comparison dict
-        raise NotImplementedError("Implement ChunkingStrategyComparator.compare")
+        fixed_chunks = FixedSizeChunker(chunk_size=chunk_size, overlap=0).chunk(text)
+        sentence_chunks = SentenceChunker().chunk(text)
+        recursive_chunks = RecursiveChunker(chunk_size=chunk_size).chunk(text)
+
+        def build_stats(chunks: list[str]) -> dict:
+            count = len(chunks)
+            avg_length = sum(len(chunk) for chunk in chunks) / count if count else 0.0
+            return {
+                "count": count,
+                "avg_length": avg_length,
+                "chunks": chunks,
+            }
+
+        return {
+            "fixed_size": build_stats(fixed_chunks),
+            "by_sentences": build_stats(sentence_chunks),
+            "recursive": build_stats(recursive_chunks),
+        }
