@@ -1,8 +1,13 @@
 # Báo Cáo Nhóm — Lab 7: Embedding & Vector Store
 
-**Nhóm:** [Tên nhóm]
-**Thành viên:** [Họ tên từng thành viên]
-**Ngày:** [Ngày nộp]
+**Nhóm:** A2-2
+**Thành viên:**
+    Lê Kim Nam - 2A202601803
+    Nguyễn Minh Hoàng - 2A202601609
+    Nguyễn Quốc Hiệu - 2A202601627
+    Nguyễn Khắc Huy - 2A202602036
+    Nguyễn Duy Lâm - 2A202601073
+**Ngày:** 03/08/2026
 
 > **Nộp 1 bản / nhóm.** Phần cá nhân (hướng tiếp cận, kết quả riêng, dự đoán…) mỗi thành viên nộp riêng trong `REPORT_CANHAN.md`. Chi tiết thang điểm: `docs/SCORING.md`.
 
@@ -73,6 +78,7 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 > Mỗi thành viên điền một khối dưới đây (copy thêm nếu nhóm có nhiều hơn 3 người).
 
 **Thành viên 1 — [Tên]**
+- **Tên:** Lê Kim Nam
 - **Loại chiến lược:** custom
 - **Mô tả & lý do chọn cho chủ đề này:** Chọn chiến lược chia theo tiêu đề/mục của tài liệu ký túc xá vì các quy định thường được tổ chức theo section rõ ràng: check-in, nội quy, dịch vụ, xử lý vi phạm. Cách này giúp chunk giữ được ngữ cảnh hoàn chỉnh và truy xuất tốt hơn khi câu hỏi bám vào một mục cụ thể.
 - **Code snippet (nếu custom):**
@@ -81,22 +87,38 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 ```
 
 **Thành viên 2 — [Tên]**
+- **Tên:** Nguyễn Minh Hoàng
 - **Loại chiến lược:** SentenceChunker
-- **Mô tả & lý do chọn:** Tài liệu dormitory thường có câu ngắn, policy rõ, nên chia theo câu giúp giữ nguyên ngữ nghĩa và tạo chunk gọn hơn fixed-size. Trên corpus này, cách này cho kết quả cân bằng nhất giữa số chunk và khả năng giữ ý.
+- **Mô tả & lý do chọn:** Tài liệu dormitory thường có câu ngắn, policy rõ, nên chia theo câu giúp giữ nguyên ngữ nghĩa và tạo chunk gọn hơn fixed-size. Trên corpus này, cách này cho kết quả cân bằng nhất giữa số chunk và khả năng giữ ý, đặc biệt với các policy page có câu độc lập và ít bảng biểu.
 - **Code snippet (nếu custom):**
 
 **Thành viên 3 — [Tên]**
+- **Tên:** Nguyễn Quốc Hiệu
 - **Loại chiến lược:** RecursiveChunker
-- **Mô tả & lý do chọn:** Recursive chunking thử giữ cấu trúc đoạn trước, rồi mới hạ xuống cấp nhỏ hơn nếu chunk còn dài. Chiến lược này hữu ích khi tài liệu có nhiều tiêu đề, nhưng trên corpus nhỏ và nhiều bullet thì số chunk sinh ra khá lớn.
+- **Mô tả & lý do chọn:** Recursive chunking thử giữ cấu trúc đoạn trước, rồi mới hạ xuống cấp nhỏ hơn nếu chunk còn dài. Chiến lược này hữu ích khi tài liệu có nhiều tiêu đề, nhưng trên corpus nhỏ và nhiều bullet thì số chunk sinh ra khá lớn; vẫn đáng thử để xem mức giữ cấu trúc so với sentence-based.
+- **Code snippet (nếu custom):**
+
+**Thành viên 4 — [Tên]**
+- **Tên:** Nguyễn Khắc Huy
+- **Loại chiến lược:** FixedSizeChunker
+- **Mô tả & lý do chọn:** Dùng fixed-size để có baseline dễ so sánh và đảm bảo mọi tài liệu đều được chia thành các chunk đều nhau. Với corpus ký túc xá, chiến lược này phù hợp khi muốn ưu tiên tính đơn giản, ổn định và dễ kiểm soát overlap.
+- **Code snippet (nếu custom):**
+
+**Thành viên 5 — [Tên]**
+- **Tên:** Nguyễn Duy Lâm
+- **Loại chiến lược:** custom
+- **Mô tả & lý do chọn:** Ưu tiên chiến lược tách theo bullet/list và giữ nguyên các nhóm quy định ngắn như guest policy, quiet hours, move-in checklist. Cách này thực tế với corpus Dormitory vì nhiều câu trả lời benchmark nằm đúng trong từng bullet rule, nên chunk cần ưu tiên giữ trọn từng rule thay vì cắt cơ học.
 - **Code snippet (nếu custom):**
 
 ### So Sánh Giữa Các Thành Viên
 
 | Thành viên | Chiến lược (Strategy) | Điểm truy xuất (/10) | Điểm mạnh | Điểm yếu |
 |-----------|----------|----------------------|-----------|----------|
-| Thành viên 1 | custom heading/section-based | 10 | Giữ ngữ cảnh tốt nhất cho tài liệu quy định; dễ map sang câu hỏi theo mục. | Cần tiền xử lý heading và tách section chuẩn. |
-| Thành viên 2 | SentenceChunker | 10 | Cân bằng tốt giữa coherence và số chunk; retrieval ổn định trên corpus Dormitory. | Có thể kém hơn nếu tài liệu không có dấu câu rõ ràng. |
-| Thành viên 3 | RecursiveChunker | 10 | Tôn trọng cấu trúc tài liệu và fallback linh hoạt. | Sinh quá nhiều chunk nhỏ, dễ làm retrieval nhiễu. |
+| Lê Kim Nam | custom heading/section-based | 10 | Giữ ngữ cảnh tốt nhất cho tài liệu quy định; dễ map sang câu hỏi theo mục. | Cần tiền xử lý heading và tách section chuẩn. |
+| Nguyễn Minh Hoàng | SentenceChunker | 10 | Cân bằng tốt giữa coherence và số chunk; retrieval ổn định trên corpus Dormitory. | Có thể kém hơn nếu tài liệu không có dấu câu rõ ràng. |
+| Nguyễn Quốc Hiệu | RecursiveChunker | 9 | Tôn trọng cấu trúc tài liệu và fallback linh hoạt. | Sinh quá nhiều chunk nhỏ, dễ làm retrieval nhiễu. |
+| Nguyễn Khắc Huy | FixedSizeChunker | 8 | Đơn giản, dễ tái lập và làm baseline rõ ràng. | Cắt câu và cắt ý khi tài liệu có cấu trúc rule ngắn. |
+| Nguyễn Duy Lâm | custom bullet-aware chunking | 9 | Giữ nguyên rule list và checklist khá tốt cho policy pages. | Cần viết tiền xử lý riêng, khó chuẩn hóa hơn built-in strategy. |
 
 **Chiến lược nào tốt nhất cho chủ đề này? Tại sao?**
 Với corpus Dormitory này, `SentenceChunker` là chiến lược mặc định tốt nhất vì nó cho kết quả retrieval ổn định, giữ nội dung nguyên vẹn và không tạo quá nhiều chunk vụn như recursive. Nếu tài liệu có heading rõ ràng hơn, custom heading/section-based chunking sẽ là lựa chọn mạnh nhất, nhưng trên corpus hiện tại thì sentence chunking cho cân bằng tốt nhất giữa coherence và recall.
