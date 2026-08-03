@@ -156,6 +156,123 @@ class RecursiveChunker:
         return chunks
 
 
+class BulletAwareChunker:
+    """Split policy text while preserving complete bullet rules.
+
+    Markdown headings are repeated as context in their child chunks. Short
+    bullets are grouped without exceeding ``max_bullets_per_chunk`` or
+    ``chunk_size``. Oversized prose or rules use RecursiveChunker as a
+    fallback so every returned chunk stays bounded when possible.
+    """
+
+    HEADING_PATTERN = re.compile(r"^#{1,6}\s+.+$")
+    BULLET_PATTERN = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+.+$")
+
+    def __init__(
+        self,
+        chunk_size: int = 500,
+        max_bullets_per_chunk: int = 3,
+    ) -> None:
+        self.chunk_size = max(1, chunk_size)
+        self.max_bullets_per_chunk = max(1, max_bullets_per_chunk)
+
+    def _parse_blocks(self, text: str) -> list[tuple[str, str]]:
+        """Parse Markdown into heading, bullet and prose blocks."""
+        blocks: list[tuple[str, str]] = []
+        prose_lines: list[str] = []
+
+        def flush_prose() -> None:
+            if not prose_lines:
+                return
+            content = " ".join(line.strip() for line in prose_lines).strip()
+            if content:
+                blocks.append(("prose", content))
+            prose_lines.clear()
+
+        for raw_line in text.splitlines():
+            stripped = raw_line.strip()
+
+            if not stripped:
+                flush_prose()
+                continue
+
+            if self.HEADING_PATTERN.match(stripped):
+                flush_prose()
+                blocks.append(("heading", stripped))
+                continue
+
+            if self.BULLET_PATTERN.match(raw_line):
+                flush_prose()
+                blocks.append(("bullet", stripped))
+                continue
+
+            prose_lines.append(stripped)
+
+        flush_prose()
+        return blocks
+
+    def chunk(self, text: str) -> list[str]:
+        text = text.strip()
+        if not text:
+            return []
+
+        chunks: list[str] = []
+        current_heading = ""
+        current_parts: list[str] = []
+        current_bullet_count = 0
+
+        def candidate_text(parts: list[str]) -> str:
+            values = ([current_heading] if current_heading else []) + parts
+            return "\n\n".join(value for value in values if value).strip()
+
+        def flush_current() -> None:
+            nonlocal current_parts, current_bullet_count
+            if current_parts:
+                content = candidate_text(current_parts)
+                if content:
+                    chunks.append(content)
+            current_parts = []
+            current_bullet_count = 0
+
+        for kind, block in self._parse_blocks(text):
+            if kind == "heading":
+                flush_current()
+                current_heading = block
+                continue
+
+            next_bullet_count = current_bullet_count + (1 if kind == "bullet" else 0)
+            candidate = candidate_text(current_parts + [block])
+            exceeds_size = len(candidate) > self.chunk_size
+            exceeds_bullet_limit = (
+                kind == "bullet"
+                and next_bullet_count > self.max_bullets_per_chunk
+            )
+
+            if current_parts and (exceeds_size or exceeds_bullet_limit):
+                flush_current()
+                candidate = candidate_text([block])
+
+            if len(candidate) <= self.chunk_size:
+                current_parts.append(block)
+                if kind == "bullet":
+                    current_bullet_count += 1
+                continue
+
+            prefix = f"{current_heading}\n\n" if current_heading else ""
+            available_size = max(1, self.chunk_size - len(prefix))
+            splitter = RecursiveChunker(chunk_size=available_size)
+            for piece in splitter.chunk(block):
+                content = f"{prefix}{piece}".strip()
+                if content:
+                    chunks.append(content)
+
+        flush_current()
+
+        if not chunks and current_heading:
+            return [current_heading]
+        return chunks
+
+
 def _dot(a: list[float], b: list[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
 
